@@ -17,4 +17,8 @@ public class DirectedGraphNodeCoordinatesMap {
     public Coordinates2D get(DirectedGraphNode node) {
         return map.get(node);
     }
+    
+    public int size() {
+        return map.size();
+    }
 }

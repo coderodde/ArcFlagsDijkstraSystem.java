@@ -45,7 +45,7 @@ public final class KdTreeNodeRegionIDMapBuilder
         nodeList = new ArrayList<>(nodeList);
         
         if (regions >= nodeList.size()) {
-            return simpleRegionMap(nodeList);
+            return simpleRegionMap(nodeList, coordinatesMap);
         } else {
             return kdRegionMap(nodeList, 
                                coordinatesMap,
@@ -58,7 +58,7 @@ public final class KdTreeNodeRegionIDMapBuilder
                     DirectedGraphNodeCoordinatesMap coordinateMap,
                     int regions) {
         
-        NodeRegionIDMap idMap = new NodeRegionIDMap();
+        NodeRegionIDMap idMap = new NodeRegionIDMap(coordinateMap);
         
         kdRegionMapImpl(nodeList,
                         coordinateMap,
@@ -203,8 +203,10 @@ public final class KdTreeNodeRegionIDMapBuilder
      * @return a node region ID map. 
      */
     private static NodeRegionIDMap 
-        simpleRegionMap(List<DirectedGraphNode> nodeList) {
-        NodeRegionIDMap map = new NodeRegionIDMap();
+        simpleRegionMap(List<DirectedGraphNode> nodeList,
+                        DirectedGraphNodeCoordinatesMap coordinatesMap) {
+            
+        NodeRegionIDMap map = new NodeRegionIDMap(coordinatesMap);
         
         for (int i = 0; i < nodeList.size(); ++i) {
             map.put(nodeList.get(i), i);

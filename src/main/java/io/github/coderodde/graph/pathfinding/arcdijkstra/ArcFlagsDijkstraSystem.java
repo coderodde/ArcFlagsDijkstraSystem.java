@@ -19,19 +19,21 @@ public final class ArcFlagsDijkstraSystem {
     private static final int MINIMUM_REGIONS = 2;
     
     private final DirectedGraphNodeCoordinatesMap coordinatesMap;
-    private final NodeRegionIDMap regionIdMap = new NodeRegionIDMap();
+    private final NodeRegionIDMap regionIdMap;
     
     public ArcFlagsDijkstraSystem(
             List<DirectedGraphNode> nodeList,
-            DirectedGraphNodeCoordinatesMap coordinateMap,
+            DirectedGraphNodeCoordinatesMap coordinatesMap,
             int regions) {
         
         Objects.requireNonNull(nodeList, "The input node list is null.");
         
         this.coordinatesMap =
             Objects.requireNonNull(
-                coordinateMap, 
+                coordinatesMap, 
                 "The input coordinate map is null.");
+        
+        this.regionIdMap = new NodeRegionIDMap(coordinatesMap);
         
         if (nodeList.isEmpty()) {
             throw new IllegalArgumentException("The input node list is empty.");
@@ -41,6 +43,10 @@ public final class ArcFlagsDijkstraSystem {
         
         // Explore the entire graph with all the reachable nodes:
         nodeList = explore(nodeList);
+        
+        if (nodeList.size() != coordinatesMap.size()) {
+            throw new IllegalArgumentException();
+        }
     }
     
     public static List<DirectedGraphNode> 
