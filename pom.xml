@@ -8,7 +8,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <exec.mainClass>io.github.coderodde.graph.pathfinding.arcdijkstra.ArcFlagsDijkstraSystem</exec.mainClass>
+        <exec.mainClass>io.github.coderodde.graph.pathfinding.arcdijkstra.demo.Demo</exec.mainClass>
     </properties>
     <name>ArcFlagsDijkstraSystem.java</name>
     <dependencies>
@@ -28,6 +28,20 @@
     
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>
+                                io.github.coderodde.graph.pathfinding.arcdijkstra.demo.Demo
+                            </mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
             
             <plugin>
                 <groupId>org.jacoco</groupId>
