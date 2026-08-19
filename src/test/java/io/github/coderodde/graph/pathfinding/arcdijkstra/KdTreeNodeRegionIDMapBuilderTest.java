@@ -44,7 +44,7 @@ public final class KdTreeNodeRegionIDMapBuilderTest {
         
         Random random = new Random(13L);
         
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 0; i < 6; ++i) {
             DirectedGraphNode node = new DirectedGraphNode(i);
             Coordinates2D coords = getRandomCoordinates(random);
             coordMap.put(node, coords);
@@ -52,8 +52,9 @@ public final class KdTreeNodeRegionIDMapBuilderTest {
         }
         
         NodeRegionIDMap idMap = builder.build(nodeList, coordMap, 3);
+        idMap.setDecimals(2);
         
-        System.out.println("yeah");
+        System.out.println(idMap);
     }
     
     private static final Coordinates2D getRandomCoordinates(Random random) {

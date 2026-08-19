@@ -22,11 +22,17 @@ public final class NodeRegionIDMap {
     
     private final DirectedGraphNodeCoordinatesMap coordinatesMap;
     
+    private int decimals = 3;
+    
     public NodeRegionIDMap(DirectedGraphNodeCoordinatesMap coordinatesMap) {
         this.coordinatesMap = 
             Objects.requireNonNull(
                 coordinatesMap, 
                 "The coordinate map is null.");
+    }
+    
+    public void setDecimals(int decimals) {
+        this.decimals = Math.max(0, decimals);
     }
     
     public void put(DirectedGraphNode node, Integer regionId) {
@@ -56,9 +62,7 @@ public final class NodeRegionIDMap {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        sb.append("[NodeRegionIDMap ")
-          .append(this)
-          .append("]\n");
+        sb.append("[NodeRegionIDMap]\n");
         
         for (Map.Entry<Integer, Set<DirectedGraphNode>> e 
             : inverseMap.entrySet()) {
@@ -74,18 +78,37 @@ public final class NodeRegionIDMap {
         return sb.append("\n").toString();
     }
     
-    private static void 
+    private void 
         nodeSetToString(StringBuilder sb, Set<DirectedGraphNode> nodes) {
         if (nodes.isEmpty()) {
             return;
         }
         
         Iterator<DirectedGraphNode> iter = nodes.iterator();
-        
-        sb.append(iter.next());
+        String format = "%." + decimals + "f";
+        DirectedGraphNode initialNode = iter.next();
+        Coordinates2D initialNodeCoords = coordinatesMap.get(initialNode);
+          
+        sb.append(initialNode)
+          .append("(")
+          .append(String.format(format, initialNodeCoords.x()))
+          .append(", ")
+          .append(String.format(format, initialNodeCoords.y()))
+          .append(") ");
         
         while (iter.hasNext()) {
-            sb.append(", ").append(iter.next());
+            DirectedGraphNode node = iter.next();
+            Coordinates2D coordinates = coordinatesMap.get(node);
+            double x = coordinates.x();
+            double y = coordinates.y();
+            
+            sb.append(", ")
+              .append(node)
+              .append("(")
+              .append(String.format(format, x))
+              .append(", ")
+              .append(String.format(format, y))
+              .append(")");
         }
     }
 }

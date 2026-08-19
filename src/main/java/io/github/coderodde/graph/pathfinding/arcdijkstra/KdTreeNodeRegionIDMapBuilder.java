@@ -64,7 +64,7 @@ public final class KdTreeNodeRegionIDMapBuilder
                         coordinateMap,
                         idMap,
                         0,
-                        regions - 1,
+                        Math.min(nodeList.size(), regions) - 1,
                         SortKey.SORT_X);
         
         return idMap;
@@ -102,39 +102,36 @@ public final class KdTreeNodeRegionIDMapBuilder
                                                           sortKey.name());
         }
         
-        int leftLength  = nodeList.size() / 2;
-        int rightLength = nodeList.size() - leftLength;
-        
         int totalRegions = endRegionId - startRegionId + 1;
+        
         SortKey nextSortKey = sortKey == SortKey.SORT_X ? 
                               SortKey.SORT_Y :
                               SortKey.SORT_X;
         
-        if (totalRegions % 2 == 0) {
-            // Even split:
-            int leftEndRegionId    = totalRegions / 2 - 1;
-            int rightStartRegionId = totalRegions / 2;
-            
-            List<DirectedGraphNode> leftNodeList = 
-                nodeList.subList(0, totalRegions / 2);
-            
-            List<DirectedGraphNode> rightNodeList = 
-                nodeList.subList(totalRegions / 2, totalRegions);
-            
-            kdRegionMapImpl(leftNodeList,
-                            coordinatesMap, 
-                            idMap, 
-                            0, 
-                            leftEndRegionId, 
-                            nextSortKey);
-            
-            kdRegionMapImpl(rightNodeList, 
-                            coordinatesMap,
-                            idMap, 
-                            rightStartRegionId, 
-                            endRegionId, 
-                            nextSortKey);
-        } else {
+        int regions = Math.min(nodeList.size(), totalRegions);
+        int leftRegions = regions / 2;
+
+        List<DirectedGraphNode> leftNodeList = 
+            nodeList.subList(0, nodeList.size() / 2);
+
+        List<DirectedGraphNode> rightNodeList = 
+            nodeList.subList(nodeList.size() / 2, nodeList.size());
+
+        kdRegionMapImpl(leftNodeList,
+                        coordinatesMap, 
+                        idMap, 
+                        0, 
+                        leftRegions - 1, 
+                        nextSortKey);
+
+        kdRegionMapImpl(rightNodeList, 
+                        coordinatesMap,
+                        idMap, 
+                        leftRegions, 
+                        regions - 1, 
+                        nextSortKey);
+//        if (totalRegions % 2 == 0) {
+        /*} else {
             // Slightly uneven split:
             int maxLength = Math.max(leftLength, rightLength);
             
@@ -162,7 +159,7 @@ public final class KdTreeNodeRegionIDMapBuilder
                             rightStartRegionId, 
                             endRegionId, 
                             sortKey);
-        }
+        }*/
     }
     
     private static void 
