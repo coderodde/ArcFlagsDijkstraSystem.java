@@ -44,14 +44,14 @@ public final class KdTreeNodeRegionIDMapBuilderTest {
         
         Random random = new Random(13L);
         
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < 40; ++i) {
             DirectedGraphNode node = new DirectedGraphNode(i);
             Coordinates2D coords = getRandomCoordinates(random);
             coordMap.put(node, coords);
             nodeList.add(node);
         }
         
-        NodeRegionIDMap idMap = builder.build(nodeList, coordMap, 3);
+        NodeRegionIDMap idMap = builder.build(nodeList, coordMap, 7);
         idMap.setDecimals(2);
         
         System.out.println(idMap);

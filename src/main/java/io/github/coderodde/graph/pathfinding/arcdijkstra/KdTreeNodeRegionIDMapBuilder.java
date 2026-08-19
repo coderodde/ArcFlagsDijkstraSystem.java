@@ -44,13 +44,9 @@ public final class KdTreeNodeRegionIDMapBuilder
         // Do not mess with the original node list:
         nodeList = new ArrayList<>(nodeList);
         
-        if (regions >= nodeList.size()) {
-            return simpleRegionMap(nodeList, coordinatesMap);
-        } else {
-            return kdRegionMap(nodeList, 
-                               coordinatesMap,
-                               regions);
-        }
+        return kdRegionMap(nodeList, 
+                           coordinatesMap,
+                           regions);
     }
     
     private static NodeRegionIDMap 
@@ -102,14 +98,14 @@ public final class KdTreeNodeRegionIDMapBuilder
                                                           sortKey.name());
         }
         
-        int totalRegions = endRegionId - startRegionId + 1;
+        int argumentRegions = endRegionId - startRegionId + 1;
         
         SortKey nextSortKey = sortKey == SortKey.SORT_X ? 
                               SortKey.SORT_Y :
                               SortKey.SORT_X;
         
-        int regions = Math.min(nodeList.size(), totalRegions);
-        int leftRegions = regions / 2;
+        int regions = Math.min(nodeList.size(), argumentRegions);
+        int halfRegions = regions / 2;
 
         List<DirectedGraphNode> leftNodeList = 
             nodeList.subList(0, nodeList.size() / 2);
@@ -120,46 +116,16 @@ public final class KdTreeNodeRegionIDMapBuilder
         kdRegionMapImpl(leftNodeList,
                         coordinatesMap, 
                         idMap, 
-                        0, 
-                        leftRegions - 1, 
+                        startRegionId, 
+                        startRegionId + halfRegions - 1, 
                         nextSortKey);
 
         kdRegionMapImpl(rightNodeList, 
                         coordinatesMap,
                         idMap, 
-                        leftRegions, 
-                        regions - 1, 
+                        startRegionId + halfRegions, 
+                        endRegionId, 
                         nextSortKey);
-//        if (totalRegions % 2 == 0) {
-        /*} else {
-            // Slightly uneven split:
-            int maxLength = Math.max(leftLength, rightLength);
-            
-            // The left sublist is one node larger than the right node list:
-            List<DirectedGraphNode> leftNodeList = 
-                nodeList.subList(0, maxLength);
-            
-            List<DirectedGraphNode> rightNodeList = 
-                nodeList.subList(maxLength, nodeList.size());
-            
-            int leftNodeListRegions = totalRegions / 2 + 1;
-            int leftEndRegionId     = leftNodeListRegions - 1;
-            int rightStartRegionId  = leftEndRegionId + 1;
-            
-            kdRegionMapImpl(leftNodeList, 
-                            coordinatesMap,
-                            idMap, 
-                            0, 
-                            leftEndRegionId, 
-                            nextSortKey);
-            
-            kdRegionMapImpl(rightNodeList, 
-                            coordinatesMap, 
-                            idMap, 
-                            rightStartRegionId, 
-                            endRegionId, 
-                            sortKey);
-        }*/
     }
     
     private static void 
@@ -190,26 +156,6 @@ public final class KdTreeNodeRegionIDMapBuilder
             
             return Double.compare(uy, vy);
         });
-    }
-    
-    /**
-     * Called when the each graph node constitutes a single-node region.
-     * 
-     * @param nodeList the list of graph nodes.
-     * 
-     * @return a node region ID map. 
-     */
-    private static NodeRegionIDMap 
-        simpleRegionMap(List<DirectedGraphNode> nodeList,
-                        DirectedGraphNodeCoordinatesMap coordinatesMap) {
-            
-        NodeRegionIDMap map = new NodeRegionIDMap(coordinatesMap);
-        
-        for (int i = 0; i < nodeList.size(); ++i) {
-            map.put(nodeList.get(i), i);
-        }
-        
-        return map;
     }
     
     private static void checkNodeList(List<DirectedGraphNode> nodeList) {
