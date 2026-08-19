@@ -76,6 +76,16 @@ public final class ArcFlagsDijkstraSystem {
         
         return new ArrayList<>(visited);
     }
+        
+    public List<DirectedGraphNode> queryViaDijkstra(DirectedGraphNode source,
+                                                    DirectedGraphNode target) {
+        return List.of();
+    }
+    
+    public List<DirectedGraphNode> queryViaArcFlags(DirectedGraphNode source,
+                                                    DirectedGraphNode target) {
+        return List.of();
+    }
     
     private static void checkRegions(int regions) {
         if (regions < MINIMUM_REGIONS) {

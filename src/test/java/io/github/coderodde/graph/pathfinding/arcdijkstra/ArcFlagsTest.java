@@ -49,4 +49,9 @@ public final class ArcFlagsTest {
         assertTrue(af.readFlag(29));
         assertTrue(af.readFlag(31));
     }
+    
+    @Test
+    public void test3() {
+        new ArcFlags(16); // Tight bit vector.
+    }
 }
