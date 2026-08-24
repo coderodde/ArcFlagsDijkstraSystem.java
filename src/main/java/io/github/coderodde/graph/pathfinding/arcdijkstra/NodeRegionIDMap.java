@@ -1,6 +1,5 @@
 package io.github.coderodde.graph.pathfinding.arcdijkstra;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,27 +61,15 @@ public final class NodeRegionIDMap {
     public Set<DirectedGraphNode> getBoundaryNodes() {
         Set<DirectedGraphNode> boundaryNodesSet = new HashSet<>();
         
-        for (Set<DirectedGraphNode> region : inverseMap.values()) {
-            loop:
-            for (DirectedGraphNode node : region) {
-                int nodeRegion = map.get(node);
+        for (DirectedGraphNode node : map.keySet()) {
+            int nodeRegion = map.get(node);
+            
+            for (DirectedGraphNode parent : node.parents()) {
+                int parentRegion = map.get(parent);
                 
-                for (DirectedGraphNode child : node.children()) {
-                    int childRegion = map.get(child);
-                    
-                    if (nodeRegion != childRegion) {
-                        boundaryNodesSet.add(node);
-                        continue loop;
-                    }
-                }
-                
-                for (DirectedGraphNode parent : node.parents()) {
-                    int parentRegion = map.get(parent);
-                    
-                    if (nodeRegion != parentRegion) {
-                        boundaryNodesSet.add(node);
-                        continue loop;
-                    }
+                if (parentRegion != nodeRegion) {
+                    boundaryNodesSet.add(node);
+                    break;
                 }
             }
         }

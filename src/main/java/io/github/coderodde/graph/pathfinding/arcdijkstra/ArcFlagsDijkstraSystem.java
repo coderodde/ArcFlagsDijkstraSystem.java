@@ -131,7 +131,7 @@ public final class ArcFlagsDijkstraSystem {
             }
             
             for (DirectedGraphNode childNode : currentNode.children()) {
-                ArcFlags arcFlags = arcFlagsMap.get(currentNode, target);
+                ArcFlags arcFlags = arcFlagsMap.get(currentNode, childNode);
                 
                 if (!arcFlags.readFlag(targetRegion)) {
                     continue;
@@ -270,8 +270,13 @@ public final class ArcFlagsDijkstraSystem {
             
         ArcFlagsMap arcFlagsMap = new ArcFlagsMap();
         buildArcFlagsMap(arcFlagsMap, nodeList, regions);
+        int iteration = 1;
         
         for (DirectedGraphNode boundaryNode : boundaryNodesSet) {
+            System.out.printf("Preprocessing: %d/%d.%n",
+                              iteration++, 
+                              boundaryNodesSet.size());
+            
             preprocess(boundaryNode, 
                        weightFunction,
                        arcFlagsMap,
@@ -315,9 +320,11 @@ public final class ArcFlagsDijkstraSystem {
         while (!frontierHeap.isEmpty()) {
             DirectedGraphNode currentNode = frontierHeap.extractTop();
             
+            double currentDistance = distancesMap.get(currentNode);
+            
             for (DirectedGraphNode parentNode : currentNode.parents()) {
                 
-                double candidate = distancesMap.get(currentNode) 
+                double candidate = currentDistance
                                  + weightFunction.get(parentNode, 
                                                       currentNode);
                 
@@ -327,10 +334,35 @@ public final class ArcFlagsDijkstraSystem {
                 
                 if (candidate < oldDistance) {
                     distancesMap.put(parentNode, candidate);
-                    frontierHeap.insert(parentNode, candidate);
-                    arcFlagsMap.get(parentNode, currentNode).writeFlag(region);
-                } else if (approximatelyEqual(candidate, oldDistance)) {
-                    arcFlagsMap.get(parentNode, currentNode).writeFlag(region);
+                    
+                    if (frontierHeap.containsDatum(parentNode)) {
+                        frontierHeap.changePriority(parentNode, candidate);
+                    } else {
+                        frontierHeap.insert(parentNode, candidate);
+                    }
+                }
+            }
+        }
+        
+        for (Map.Entry<DirectedGraphNode, Double> entry
+            : distancesMap.entrySet()) {
+            
+            DirectedGraphNode tailNode = entry.getKey();
+            double tailDistance        = entry.getValue();
+            
+            for (DirectedGraphNode headNode : tailNode.children()) {
+                
+                Double headDistance = distancesMap.get(headNode);
+                
+                if (headDistance == null) {
+                    continue;
+                }
+                
+                double candidate = weightFunction.get(tailNode, headNode) 
+                                 + headDistance;
+                
+                if (approximatelyEqual(tailDistance, candidate)) {
+                    arcFlagsMap.get(tailNode, headNode).writeFlag(region);
                 }
             }
         }
