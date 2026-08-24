@@ -12,15 +12,24 @@ public final class DirectedGraphWeightFunction {
     private final Map<DirectedGraphNode, Map<DirectedGraphNode, Double>> map = 
         new HashMap<>();
     
-    public void put(DirectedGraphNode head,
-                    DirectedGraphNode tail,
+    public void put(DirectedGraphNode tail,
+                    DirectedGraphNode head,
                     double weight) {
         checkWeight(weight);
-        map.computeIfAbsent(head, ignored -> new HashMap<>()).put(tail, weight);
+        map.computeIfAbsent(tail, ignored -> new HashMap<>()).put(head, weight);
     }
     
-    public double get(DirectedGraphNode head, DirectedGraphNode tail) {
-        return map.get(head).get(tail);
+    public double get(DirectedGraphNode tail, DirectedGraphNode head) {
+        return map.get(tail).get(head);
+    }
+    
+    public boolean containsArcWeight(DirectedGraphNode tail, 
+                                     DirectedGraphNode head) {
+        if (!map.containsKey(tail)) {
+            return false;
+        }
+        
+        return map.get(tail).containsKey(head);
     }
     
     private static void checkWeight(double weight) {

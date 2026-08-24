@@ -17,9 +17,9 @@ public final class DirectedGraphNode {
         this.id = id;
     }
     
-    public void connectTo(DirectedGraphNode tail) {
-        children.add(tail);
-        tail.parents.add(this);
+    public void connectTo(DirectedGraphNode head) {
+        children.add(head);
+        head.parents.add(this);
     }
     
     public Set<DirectedGraphNode> children() {
