@@ -59,7 +59,17 @@ public final class Demo {
         
         System.out.printf("A* in %d ms.%n", duration);
         
-        System.out.println("Dijkstra and A* agree: " + (path1.equals(path2)));
+        t = System.currentTimeMillis();
+        List<DirectedGraphNode> path3 = dijkstraSystem.queryViaArcFlags(source, 
+                                                                        target);
+        
+        duration = System.currentTimeMillis() - t;
+        System.out.printf("Dijkstra with arc-flags in %d ms.%n", duration);
+        
+        System.out.printf("Dijkstra and A* agree: %b.%n",
+                          path1.equals(path2) && path2.equals(path3));
+        
+        
     }
     
     private static GraphData createRandomGraph() {
