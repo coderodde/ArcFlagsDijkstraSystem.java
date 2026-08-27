@@ -12,7 +12,10 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- *
+ * This class implements a system for point-to-point shortest path queries in
+ * digraphs. The main algorithm {@link ArcFlagsDijkstraSystem#queryViaArcFlags}
+ * is discussed in the paper
+ * <b><i>Fast Point-to-Point Shortest Path Computations with Arc-Flags</i></b>.
  */
 public final class ArcFlagsDijkstraSystem {
     
@@ -26,15 +29,41 @@ public final class ArcFlagsDijkstraSystem {
      */
     private static final int MINIMUM_REGIONS = 2;
     
+    /**
+     * Holds the weight function.
+     */
     private final DirectedGraphWeightFunction weightFunction;
+    
+    /**
+     * Maps each directed graph node to its 2D-coordinates.
+     */
     private final DirectedGraphNodeCoordinatesMap coordinatesMap;
+    
+    /**
+     * Maps each graph node to its region number.
+     */
     private final NodeRegionIDMap regionIdMap;
+    
+    /**
+     * Maps each arc to its arc flags.
+     */
     private final ArcFlagsMap arcFlagsMap;
     
+    /**
+     * Constructs this shortest path query engine by preprocessing the input
+     * graph.
+     * 
+     * @param nodeList       the list of graph nodes.
+     * @param weightFunction the weight function.
+     * @param coordinatesMap the map mapping nodes to 2D-coordinates.
+     * @param regionIdMap    the map mapping nodes to region numbers.
+     * @param regions        the number of regions.
+     */
     public ArcFlagsDijkstraSystem(
             List<DirectedGraphNode> nodeList,
             DirectedGraphWeightFunction weightFunction,
             DirectedGraphNodeCoordinatesMap coordinatesMap,
+            NodeRegionIDMap regionIdMap,
             int regions) {
         
         Objects.requireNonNull(nodeList, "The input node list is null.");
@@ -67,9 +96,10 @@ public final class ArcFlagsDijkstraSystem {
                     coordinatesMap.size()));
         }
         
-        regionIdMap = new KdTreeNodeRegionIDMapBuilder().build(nodeList, 
-                                                               coordinatesMap, 
-                                                               regions);
+        this.regionIdMap = 
+            Objects.requireNonNull(
+                regionIdMap, 
+                "The input region ID map is null.");
         
         Set<DirectedGraphNode> boundaryNodesSet = regionIdMap.getBoundaryNodes();
         
@@ -79,6 +109,15 @@ public final class ArcFlagsDijkstraSystem {
                                  regions);
     }
     
+    /**
+     * Expands the graph represented by nodes in {@code nodeList}, i.e., returns
+     * the list of all nodes reachable via child/parent link from any node in
+     * {@code nodeList}.
+     * 
+     * @param nodeList the source node list.
+     * 
+     * @return the fully expanded graph.
+     */
     public static List<DirectedGraphNode> 
         explore(List<DirectedGraphNode> nodeList) {
         
@@ -107,6 +146,15 @@ public final class ArcFlagsDijkstraSystem {
         return new ArrayList<>(visited);
     }
         
+    /**
+     * Returns a shortest {@code source - target} path via Dijkstra's algorithm
+     * that prunes some arcs from consideration.
+     * 
+     * @param source the source node.
+     * @param target the target node.
+     * 
+     * @return the shortest path from source to target. 
+     */
     public List<DirectedGraphNode> queryViaArcFlags(DirectedGraphNode source,
                                                     DirectedGraphNode target) {
         Map<DirectedGraphNode, DirectedGraphNode> parentsMap = new HashMap<>();
@@ -134,6 +182,8 @@ public final class ArcFlagsDijkstraSystem {
                 ArcFlags arcFlags = arcFlagsMap.get(currentNode, childNode);
                 
                 if (!arcFlags.readFlag(targetRegion)) {
+                    // The arc (currentNode, childNode) does not lead to the
+                    // target along a shortest path; omit it.
                     continue;
                 }
                 
@@ -162,6 +212,15 @@ public final class ArcFlagsDijkstraSystem {
         return List.of();
     }
         
+    /**
+     * Returns the shortest path from the input source node to the target node
+     * using traditional Dijkstra's algorithm.
+     * 
+     * @param source the source node.
+     * @param target the target node.
+     * 
+     * @return the shortest node from the source node to the target node. 
+     */
     public List<DirectedGraphNode> queryViaDijkstra(DirectedGraphNode source,
                                                     DirectedGraphNode target) {
         
@@ -210,6 +269,14 @@ public final class ArcFlagsDijkstraSystem {
         return List.of();
     }
     
+    /**
+     * Computes the shortest path from {@code source} to {@code target} via A*.
+     * 
+     * @param source the source node.
+     * @param target the target node.
+     * 
+     * @return the shortest path from the source node and to the target node. 
+     */
     public List<DirectedGraphNode> queryViaAStar(DirectedGraphNode source,
                                                  DirectedGraphNode target) {
         Map<DirectedGraphNode, DirectedGraphNode> parentsMap = new HashMap<>();
@@ -262,6 +329,17 @@ public final class ArcFlagsDijkstraSystem {
         return List.of();
     }
     
+    /**
+     * Preprocesses the graph and returns the map mapping each directed arc to
+     * its arc-flags.
+     * 
+     * @param nodeList         the list of all nodes in the graph.
+     * @param boundaryNodesSet the set of boundary nodes.
+     * @param weightFunction   the weight function.
+     * @param regions          the number of regions.
+     * 
+     * @return the arc-flags map.
+     */
     private ArcFlagsMap 
         preprocess(List<DirectedGraphNode> nodeList,
                    Set<DirectedGraphNode> boundaryNodesSet,
@@ -302,6 +380,16 @@ public final class ArcFlagsDijkstraSystem {
         return arcFlagsMap;
     }
         
+    /**
+     * Runs the reverse Dijkstra's algorithm on the boundary node 
+     * {@code boundaryNode} and sets all relevant arc-flags.
+     * 
+     * @param boundaryNode   the boundary node from which to start the 
+     *                       traversal backwards.
+     * @param weightFunction the graph weight function.
+     * @param arcFlagsMap    the target arc-flags map.
+     * @param region         the current region number.
+     */    
     private static void preprocess(DirectedGraphNode boundaryNode,
                                    DirectedGraphWeightFunction weightFunction,
                                    ArcFlagsMap arcFlagsMap,
@@ -368,10 +456,27 @@ public final class ArcFlagsDijkstraSystem {
         }
     }
         
+    /**
+     * Returns {@code true} if and only if the two arguments are within
+     * {@code E} from each other.
+     * 
+     * @param a the first floating-point value.
+     * @param b the second floating-point value.
+     * 
+     * @return {@code true} if and only if the two input numbers are 
+     *         sufficiently close to each other.
+     */
     private static boolean approximatelyEqual(double a, double b) {
         return Math.abs(a - b) < E;
     }
     
+    /**
+     * Builds all the empty arc-flags for the arc-flags map.
+     * 
+     * @param arcFlagsMap the target arc-flags map.
+     * @param nodeList    the list of all graph nodes.
+     * @param regions     the total number of regions.
+     */
     private static void buildArcFlagsMap(ArcFlagsMap arcFlagsMap,
                                          List<DirectedGraphNode> nodeList,
                                          int regions) {
@@ -383,6 +488,14 @@ public final class ArcFlagsDijkstraSystem {
         }
     }
     
+    /**
+     * Computes the Euclidean distance between {@code node} and {code target}.
+     * 
+     * @param node   the first node.
+     * @param target the second node.
+     * 
+     * @return the Euclidean distance between the first and the second node.
+     */
     private double heuristicEstimate(DirectedGraphNode node, 
                                      DirectedGraphNode target) {
         Coordinates2D nodeCoords   = coordinatesMap.get(node);
@@ -390,6 +503,15 @@ public final class ArcFlagsDijkstraSystem {
         return nodeCoords.euclideanDistance(targetCoords);
     }
     
+    /**
+     * Builds the shortest path.
+     *
+     * @param target     the target node.
+     * @param parentsMap the map mapping each graph node to its parent node on
+     *                   the shortest path.
+     * 
+     * @return the shortest path to target. 
+     */
     private static List<DirectedGraphNode> 
         tracebackPath(DirectedGraphNode target, 
                       Map<DirectedGraphNode, DirectedGraphNode> parentsMap) {
@@ -404,7 +526,12 @@ public final class ArcFlagsDijkstraSystem {
         Collections.reverse(path);
         return path;
     }
-    
+   
+    /**
+     * Checks the number of regions.
+     * 
+     * @param regions the argument.
+     */    
     private static void checkRegions(int regions) {
         if (regions < MINIMUM_REGIONS) {
             throw new IllegalArgumentException(
@@ -414,9 +541,5 @@ public final class ArcFlagsDijkstraSystem {
                     regions, 
                     MINIMUM_REGIONS));
         }
-    }
-    
-    private final record HeapNode(DirectedGraphNode node, double score) {
-        
     }
 }

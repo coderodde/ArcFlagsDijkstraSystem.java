@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * This class implements the demonstration of the P2P-shortest path algorithms.
+ * This class implements the demonstration of the P2P-shortest path algorithns.
  */
 public final class Demo {
     
-    private static final int NODES = 50000;
-    private static final int ARCS = NODES * 3;
-    private static final int REGIONS = 100;
+    private static final int NODES = 2_000_000;
+    private static final int ARCS = NODES * 3 + NODES / 2;
+    private static final int REGIONS = 200;
     private static final int CROSSING_ARCS = 300;
-    private static final Random RANDOM = new Random(13L);
+    private static final Random RANDOM = new Random();
     private static final double GRID_WIDTH_HEIGHT = 10.0;
     private static final double MAXIMUM_NEIGHBOUR_DISTANCE = 0.15;
     private static final double ADD_ARC_FACTOR = 0.2;
@@ -30,11 +30,11 @@ public final class Demo {
             "=== %s demo ===%n", 
             ArcFlagsDijkstraSystem.class.getSimpleName());
         
-        long t = System.currentTimeMillis();
+        long t = System.nanoTime();
         GraphData graphData = createRandomGraph();
-        long duration = System.currentTimeMillis() - t;
+        long duration = System.nanoTime() - t;
         
-        System.out.printf("Graph data built in %d ms.%n", duration);
+        System.out.printf("Graph data built in %d ns.%n", duration);
         
         DirectedGraphNode source = choose(graphData.nodeList());
         DirectedGraphNode target = choose(graphData.nodeList());
@@ -44,30 +44,31 @@ public final class Demo {
                 graphData.nodeList(), 
                 graphData.weightFunction(), 
                 graphData.coordinatesMap(), 
+                graphData.regionIdMap,
                 REGIONS);
         
-        t = System.currentTimeMillis();
+        t = System.nanoTime();
         List<DirectedGraphNode> path1 = dijkstraSystem.queryViaDijkstra(source,
                                                                         target);
         
-        duration = System.currentTimeMillis() - t;
+        duration = System.nanoTime() - t;
         
-        System.out.printf("Dijkstra in %d ms.%n", duration);
+        System.out.printf("Dijkstra in %d ns.%n", duration);
         
-        t = System.currentTimeMillis();
+        t = System.nanoTime();
         List<DirectedGraphNode> path2 = dijkstraSystem.queryViaAStar(source,
                                                                      target);
         
-        duration = System.currentTimeMillis() - t;
+        duration = System.nanoTime() - t;
         
-        System.out.printf("A* in %d ms.%n", duration);
+        System.out.printf("A* in %d ns.%n", duration);
         
-        t = System.currentTimeMillis();
+        t = System.nanoTime();
         List<DirectedGraphNode> path3 = dijkstraSystem.queryViaArcFlags(source, 
                                                                         target);
         
-        duration = System.currentTimeMillis() - t;
-        System.out.printf("Dijkstra with arc-flags in %d ms.%n", duration);
+        duration = System.nanoTime() - t;
+        System.out.printf("Dijkstra with arc-flags in %d ns.%n", duration);
         
         System.out.printf("Dijkstra and A* agree: %b.%n",
                           path1.equals(path2) && path2.equals(path3));
@@ -83,6 +84,8 @@ public final class Demo {
         DirectedGraphWeightFunction weightFunction = 
             new DirectedGraphWeightFunction();
         
+        long t = System.nanoTime();
+        
         for (int i = 0; i < NODES; ++i) {
             DirectedGraphNode node = new DirectedGraphNode(i);
             Coordinates2D coords   = getRandomCoordinates();
@@ -90,12 +93,22 @@ public final class Demo {
             coordsMap.put(node, coords);
         }
         
+        System.out.printf("[STATUS] Created nodes and coordinates in %d ns.%n",
+                          System.nanoTime() - t);
+        
+        t = System.nanoTime();
+        
         NodeRegionIDMap regionMap =
             new KdTreeNodeRegionIDMapBuilder()
                 .build(nodeList, coordsMap, REGIONS);
         
+        System.out.printf("[STATUS] Created region assignments in %d ns.%n", 
+                          System.nanoTime() - t);
+        
         List<List<DirectedGraphNode>> regionLists = 
             new ArrayList<>(regionMap.numberOfRegions());
+        
+        t = System.nanoTime();
         
         // Create internal regions:
         for (int region = 0; region < regionMap.numberOfRegions(); ++region) {
@@ -165,7 +178,13 @@ public final class Demo {
             --crossingArcs;
         }
         
-        return new GraphData(nodeList, weightFunction, coordsMap);
+        System.out.printf("[STATUS] Created arcs in %d ns.%n", 
+                          System.nanoTime() - t);
+        
+        return new GraphData(nodeList, 
+                             weightFunction,
+                             coordsMap, 
+                             regionMap);
     }
     
     private static <T> T choose(List<T> lst) {
@@ -184,8 +203,8 @@ public final class Demo {
     private static final record GraphData(
         List<DirectedGraphNode> nodeList,
         DirectedGraphWeightFunction weightFunction,
-        DirectedGraphNodeCoordinatesMap coordinatesMap) {
-        
+        DirectedGraphNodeCoordinatesMap coordinatesMap,
+        NodeRegionIDMap regionIdMap) {
         
     }
 }
