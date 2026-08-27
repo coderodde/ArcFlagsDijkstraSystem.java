@@ -23,6 +23,15 @@ public final class DirectedGraphWeightFunction {
         return map.get(tail).get(head);
     }
     
+    /**
+     * Return {@code true} if and only if there is a weight assignment for the
+     * {@code (tail -> head)} arc.
+     * 
+     * @param tail the tail node of the arc.
+     * @param head the head node of the arc.
+     * 
+     * @return {@code true} only if there is a weight associated with the arc.
+     */
     public boolean containsArcWeight(DirectedGraphNode tail, 
                                      DirectedGraphNode head) {
         if (!map.containsKey(tail)) {

@@ -13,19 +13,39 @@ public final class DirectedGraphNode {
     private final Set<DirectedGraphNode> children = new HashSet<>();
     private final Set<DirectedGraphNode> parents  = new HashSet<>();
     
+    /**
+     * Constructs this node. The input ID must be unique throughout the graph.
+     * 
+     * @param id the node ID.
+     */
     public DirectedGraphNode(int id) {
         this.id = id;
     }
     
+    /**
+     * Creates a directed arc {@code (this -> head)}.
+     * 
+     * @param head the head node of the arc.
+     */
     public void connectTo(DirectedGraphNode head) {
         children.add(head);
         head.parents.add(this);
     }
     
+    /**
+     * Returns the unmodifiable view of all the child nodes of this node.
+     * 
+     * @return the set of child nodes of this node.
+     */
     public Set<DirectedGraphNode> children() {
         return Collections.unmodifiableSet(children);
     }
     
+    /**
+     * Returns the unmodifiable view of all the parent nodes of this node.
+     * 
+     * @return the set of parent nodes of this node. 
+     */
     public Set<DirectedGraphNode> parents() {
         return Collections.unmodifiableSet(parents);
     }

@@ -70,12 +70,20 @@ public final class Demo {
         duration = System.nanoTime() - t;
         System.out.printf("Dijkstra with arc-flags in %d ns.%n", duration);
         
-        System.out.printf("Algorithms agree: %b.%n",
-                          path1.equals(path2) && path2.equals(path3));
+        boolean pathsEqual = path1.equals(path2) && path1.equals(path3);
         
-        System.out.println(path1);
-        System.out.println(path2);
-        System.out.println(path3);
+        if (pathsEqual) {
+            System.out.println("Algorithms agreed!");
+            
+            if (path1.isEmpty()) {
+                System.out.println(
+                    "The paths are empty. Target not reachable.");
+            } else {
+                System.out.printf("Path length: %d nodes.%n", path1.size());
+            }
+        } else {
+            System.err.println("Algorithms disagreed!");
+        }
     }
     
     public static GraphData createRandomGraph() {

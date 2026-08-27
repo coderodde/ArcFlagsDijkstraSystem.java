@@ -31,6 +31,13 @@ public final class NodeRegionIDMap {
                 "The coordinate map is null.");
     }
     
+    /**
+     * Sets the number of decimals while printing the coordinates in the
+     * {@link #toString()} method.
+     * 
+     * @param decimals the number of decimals to print for each floating-point
+     *                 number.
+     */
     public void setDecimals(int decimals) {
         this.decimals = Math.max(0, decimals);
     }
@@ -54,10 +61,22 @@ public final class NodeRegionIDMap {
         return regionIdSet.size();
     }
     
+    /**
+     * Returns the set of all nodes belonging to the {@code region}th region.
+     * 
+     * @param region the region number.
+     * 
+     * @return the entire region with the specified number.
+     */
     public Set<DirectedGraphNode> getRegionNodes(int region) {
         return Collections.unmodifiableSet(inverseMap.get(region));
     }
     
+    /**
+     * Returns the set of all boundary nodes over the entire graph.
+     * 
+     * @return the set of all boundary nodes.
+     */
     public Set<DirectedGraphNode> getBoundaryNodes() {
         Set<DirectedGraphNode> boundaryNodesSet = new HashSet<>();
         

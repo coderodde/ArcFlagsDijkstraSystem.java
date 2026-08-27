@@ -48,12 +48,12 @@ public final class DoublePriorityBinaryHeap<T> {
     /**
      * Maps the heap element to a heap entry describing its metadata.
      */
-    private Map<T, BinaryHeapEntry<T>> map = new HashMap<>();
+    private final Map<T, BinaryHeapEntry<T>> map = new HashMap<>();
 
     /**
      * The actual heap array.
      */
-    private List<BinaryHeapEntry<T>> table = new ArrayList<>();
+    private final List<BinaryHeapEntry<T>> table = new ArrayList<>();
 
     /**
      * Inserts a new datum into this heap only if it is not yet present.
