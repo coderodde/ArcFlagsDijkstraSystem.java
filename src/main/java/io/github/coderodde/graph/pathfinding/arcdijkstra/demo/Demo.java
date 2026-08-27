@@ -5,21 +5,24 @@ import io.github.coderodde.graph.pathfinding.arcdijkstra.Coordinates2D;
 import io.github.coderodde.graph.pathfinding.arcdijkstra.DirectedGraphNode;
 import io.github.coderodde.graph.pathfinding.arcdijkstra.DirectedGraphNodeCoordinatesMap;
 import io.github.coderodde.graph.pathfinding.arcdijkstra.DirectedGraphWeightFunction;
+import io.github.coderodde.graph.pathfinding.arcdijkstra.KdTreeNodeRegionIDMapBuilder;
+import io.github.coderodde.graph.pathfinding.arcdijkstra.NodeRegionIDMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
- *
+ * This class implements the demonstration of the P2P-shortest path algorithms.
  */
 public final class Demo {
     
     private static final int NODES = 50000;
-    private static final int ARCS = NODES * 4;
+    private static final int ARCS = NODES * 3;
     private static final int REGIONS = 100;
+    private static final int CROSSING_ARCS = 300;
     private static final Random RANDOM = new Random(13L);
     private static final double GRID_WIDTH_HEIGHT = 10.0;
-    private static final double MAXIMUM_NEIGHBOUR_DISTANCE = 1.3;
+    private static final double MAXIMUM_NEIGHBOUR_DISTANCE = 0.15;
     private static final double ADD_ARC_FACTOR = 0.2;
     
     public static void main(String[] args) {
@@ -87,30 +90,79 @@ public final class Demo {
             coordsMap.put(node, coords);
         }
         
-        int pendingArcs = ARCS;
+        NodeRegionIDMap regionMap =
+            new KdTreeNodeRegionIDMapBuilder()
+                .build(nodeList, coordsMap, REGIONS);
         
-        while (pendingArcs > 0) {
-            DirectedGraphNode tail = choose(nodeList);
-            DirectedGraphNode head = choose(nodeList);
+        List<List<DirectedGraphNode>> regionLists = 
+            new ArrayList<>(regionMap.numberOfRegions());
+        
+        // Create internal regions:
+        for (int region = 0; region < regionMap.numberOfRegions(); ++region) {
+            List<DirectedGraphNode> regionNodeList = 
+                new ArrayList<>(regionMap.getRegionNodes(region));
             
-            Coordinates2D coordsTail = coordsMap.get(tail);
-            Coordinates2D coordsHead = coordsMap.get(head);
+            regionLists.addLast(regionNodeList);
             
-            double distance = coordsTail.euclideanDistance(coordsHead);
+            int localRegionArcs = getLocalRegionArcs(regionNodeList.size(),
+                                                     nodeList.size());
             
-            if (distance <= MAXIMUM_NEIGHBOUR_DISTANCE) {
-                if (weightFunction.containsArcWeight(tail, head)) {
-                    // Omit already present arc:
-                    continue;
+            // Create arcs within the regions:
+            while (localRegionArcs > 0) {
+                DirectedGraphNode tail = choose(regionNodeList);
+                DirectedGraphNode head = choose(regionNodeList);
+                
+                Coordinates2D coordsTail = coordsMap.get(tail);
+                Coordinates2D coordsHead = coordsMap.get(head);
+
+                double distance = coordsTail.euclideanDistance(coordsHead);
+
+                if (distance <= MAXIMUM_NEIGHBOUR_DISTANCE) {
+                    if (weightFunction.containsArcWeight(tail, head)) {
+                        // Omit already present arc:
+                        continue;
+                    }
+
+                    tail.connectTo(head);
+
+                    double arcWeight = distance * (1.0 + ADD_ARC_FACTOR);
+
+                    weightFunction.put(tail, head, arcWeight);
+                    --localRegionArcs;
                 }
-                
-                tail.connectTo(head);
-                
-                double arcWeight = distance * (1.0 + ADD_ARC_FACTOR);
-                
-                weightFunction.put(tail, head, arcWeight);
-                --pendingArcs;
             }
+        }
+        
+        int crossingArcs = CROSSING_ARCS;
+        
+        while (crossingArcs > 0) {
+            int regionIndexTail = RANDOM.nextInt(regionLists.size());
+            int regionIndexHead = RANDOM.nextInt(regionLists.size());
+            
+            if (regionIndexTail == regionIndexHead) {
+                continue;
+            }
+            
+            DirectedGraphNode tail = choose(regionLists.get(regionIndexTail));
+            DirectedGraphNode head = choose(regionLists.get(regionIndexHead));
+            
+            if (tail.equals(head)) {
+                continue;
+            }
+            
+            if (weightFunction.containsArcWeight(tail, head)) {
+                continue;
+            }
+            
+            Coordinates2D tailCoords = coordsMap.get(tail);
+            Coordinates2D headCoords = coordsMap.get(head);
+            
+            double distance = tailCoords.euclideanDistance(headCoords);
+            
+            distance *= (1.0 + ADD_ARC_FACTOR);
+            
+            weightFunction.put(tail, head, distance);
+            --crossingArcs;
         }
         
         return new GraphData(nodeList, weightFunction, coordsMap);
@@ -123,6 +175,10 @@ public final class Demo {
     private static Coordinates2D getRandomCoordinates() {
         return new Coordinates2D(GRID_WIDTH_HEIGHT * RANDOM.nextDouble(),
                                  GRID_WIDTH_HEIGHT * RANDOM.nextDouble());
+    }
+
+    private static int getLocalRegionArcs(int regionSize, int graphSize) {
+        return (ARCS * regionSize) / graphSize;
     }
     
     private static final record GraphData(
