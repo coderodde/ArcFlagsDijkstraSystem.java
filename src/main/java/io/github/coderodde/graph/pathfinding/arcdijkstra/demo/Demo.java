@@ -16,10 +16,10 @@ import java.util.Random;
  */
 public final class Demo {
     
-    private static final int NODES = 2_000_000;
-    private static final int ARCS = NODES * 3 + NODES / 2;
-    private static final int REGIONS = 200;
-    private static final int CROSSING_ARCS = 300;
+    public static final int REGIONS = 50;
+    private static final int NODES = 50_000;
+    private static final int ARCS = NODES * 3 + NODES / 2; // Road network.
+    private static final int CROSSING_ARCS = 200;
     private static final Random RANDOM = new Random();
     private static final double GRID_WIDTH_HEIGHT = 10.0;
     private static final double MAXIMUM_NEIGHBOUR_DISTANCE = 0.15;
@@ -70,13 +70,15 @@ public final class Demo {
         duration = System.nanoTime() - t;
         System.out.printf("Dijkstra with arc-flags in %d ns.%n", duration);
         
-        System.out.printf("Dijkstra and A* agree: %b.%n",
+        System.out.printf("Algorithms agree: %b.%n",
                           path1.equals(path2) && path2.equals(path3));
         
-        
+        System.out.println(path1);
+        System.out.println(path2);
+        System.out.println(path3);
     }
     
-    private static GraphData createRandomGraph() {
+    public static GraphData createRandomGraph() {
         List<DirectedGraphNode> nodeList = new ArrayList<>(NODES);
         DirectedGraphNodeCoordinatesMap coordsMap = 
             new DirectedGraphNodeCoordinatesMap();
@@ -175,6 +177,7 @@ public final class Demo {
             distance *= (1.0 + ADD_ARC_FACTOR);
             
             weightFunction.put(tail, head, distance);
+            tail.connectTo(head);
             --crossingArcs;
         }
         
@@ -187,7 +190,7 @@ public final class Demo {
                              regionMap);
     }
     
-    private static <T> T choose(List<T> lst) {
+    public static <T> T choose(List<T> lst) {
         return lst.get(RANDOM.nextInt(lst.size()));
     }
     
@@ -200,7 +203,7 @@ public final class Demo {
         return (ARCS * regionSize) / graphSize;
     }
     
-    private static final record GraphData(
+    public static final record GraphData(
         List<DirectedGraphNode> nodeList,
         DirectedGraphWeightFunction weightFunction,
         DirectedGraphNodeCoordinatesMap coordinatesMap,

@@ -1,5 +1,9 @@
 package io.github.coderodde.graph.pathfinding.arcdijkstra;
 
+import io.github.coderodde.graph.pathfinding.arcdijkstra.demo.Demo;
+import io.github.coderodde.graph.pathfinding.arcdijkstra.demo.Demo.GraphData;
+import static io.github.coderodde.graph.pathfinding.arcdijkstra.demo.Demo.REGIONS;
+import static io.github.coderodde.graph.pathfinding.arcdijkstra.demo.Demo.choose;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,5 +46,33 @@ public final class ArcFlagsDijkstraSystemTest {
         assertTrue(exploredNodeSet.contains(e));
         
         assertFalse(exploredNodeSet.contains(f));
+    }
+    
+    @Test
+    public void runSearch() {
+        GraphData graphData = Demo.createRandomGraph();
+        
+        DirectedGraphNode source = choose(graphData.nodeList());
+        DirectedGraphNode target = choose(graphData.nodeList());
+        
+        ArcFlagsDijkstraSystem dijkstraSystem = 
+            new ArcFlagsDijkstraSystem(
+                graphData.nodeList(), 
+                graphData.weightFunction(), 
+                graphData.coordinatesMap(), 
+                graphData.regionIdMap(),
+                REGIONS);
+        
+        List<DirectedGraphNode> path1 = dijkstraSystem.queryViaDijkstra(source,
+                                                                        target);
+        
+        List<DirectedGraphNode> path2 = dijkstraSystem.queryViaAStar(source,
+                                                                     target);
+        
+        List<DirectedGraphNode> path3 = dijkstraSystem.queryViaArcFlags(source, 
+                                                                        target);
+        
+        assertEquals(path1, path2);
+        assertEquals(path1, path3);
     }
 }
