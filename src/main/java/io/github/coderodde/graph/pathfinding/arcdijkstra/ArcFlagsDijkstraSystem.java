@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 /**
  * This class implements a system for point-to-point shortest path queries in
@@ -47,7 +49,7 @@ public final class ArcFlagsDijkstraSystem {
     /**
      * Maps each arc to its arc flags.
      */
-    private final ArcFlagsMap arcFlagsMap;
+    private final ArcFlagsMap arcFlagsMap = new ArcFlagsMap();
     
     /**
      * Constructs this shortest path query engine by preprocessing the input
@@ -66,12 +68,38 @@ public final class ArcFlagsDijkstraSystem {
             NodeRegionIDMap regionIdMap,
             int regions) {
         
+        this(nodeList,
+             weightFunction, 
+             coordinatesMap, 
+             regionIdMap, 
+             regions, 
+             false);
+    }
+    
+    /**
+     * Constructs this shortest path query engine by preprocessing the input
+     * graph.
+     * 
+     * @param nodeList       the list of graph nodes.
+     * @param weightFunction the weight function.
+     * @param coordinatesMap the map mapping nodes to 2D-coordinates.
+     * @param regionIdMap    the map mapping nodes to region numbers.
+     * @param regions        the number of regions.
+     * @param parallel       the flag for indicating whether to perform parallel
+     *                       preprocessing.
+     */
+    public ArcFlagsDijkstraSystem(
+            List<DirectedGraphNode> nodeList,
+            DirectedGraphWeightFunction weightFunction,
+            DirectedGraphNodeCoordinatesMap coordinatesMap,
+            NodeRegionIDMap regionIdMap,
+            int regions,
+            boolean parallel) {
+        
         Objects.requireNonNull(nodeList, "The input node list is null.");
         
-        Objects.requireNonNull(weightFunction,
+        this.weightFunction = Objects.requireNonNull(weightFunction,
                                "The input weight function is null.");
-        
-        this.weightFunction = weightFunction;
         
         this.coordinatesMap =
             Objects.requireNonNull(
@@ -101,12 +129,20 @@ public final class ArcFlagsDijkstraSystem {
                 regionIdMap, 
                 "The input region ID map is null.");
         
-        Set<DirectedGraphNode> boundaryNodesSet = regionIdMap.getBoundaryNodes();
+        Set<DirectedGraphNode> boundaryNodesSet = 
+                regionIdMap.getBoundaryNodes();
         
-        arcFlagsMap = preprocess(nodeList,
-                                 boundaryNodesSet, 
-                                 weightFunction, 
-                                 regions);
+        if (parallel) {
+            parallelPreprocess(nodeList,
+                               boundaryNodesSet,
+                               weightFunction,
+                               regions);
+        } else {
+            preprocess(nodeList,
+                       boundaryNodesSet, 
+                       weightFunction, 
+                       regions);
+        }
     }
     
     /**
@@ -340,13 +376,11 @@ public final class ArcFlagsDijkstraSystem {
      * 
      * @return the arc-flags map.
      */
-    private ArcFlagsMap 
-        preprocess(List<DirectedGraphNode> nodeList,
-                   Set<DirectedGraphNode> boundaryNodesSet,
-                   DirectedGraphWeightFunction weightFunction,
-                   int regions) {
+    private void preprocess(List<DirectedGraphNode> nodeList,
+                            Set<DirectedGraphNode> boundaryNodesSet,
+                            DirectedGraphWeightFunction weightFunction,
+                            int regions) {
             
-        ArcFlagsMap arcFlagsMap = new ArcFlagsMap();
         buildArcFlagsMap(arcFlagsMap, nodeList, regions);
         int iteration = 1;
         
@@ -376,8 +410,6 @@ public final class ArcFlagsDijkstraSystem {
                 }
             }
         }
-        
-        return arcFlagsMap;
     }
         
     /**
@@ -540,6 +572,68 @@ public final class ArcFlagsDijkstraSystem {
                         "Must be at least %d.", 
                     regions, 
                     MINIMUM_REGIONS));
+        }
+    }
+
+    private void parallelPreprocess(
+        List<DirectedGraphNode> nodeList, 
+        Set<DirectedGraphNode> boundaryNodesSet, 
+        DirectedGraphWeightFunction weightFunction, 
+        int regions) {
+    
+        List<DirectedGraphNode> boundaryNodesList =
+            new ArrayList<>(boundaryNodesSet);
+        
+        Collections.shuffle(boundaryNodesList);
+        
+        int boundaryNodes = boundaryNodesList.size();
+        
+        List<PreprocessingAction> actions = new ArrayList<>(boundaryNodes);
+        ForkJoinPool pool = ForkJoinPool.commonPool();
+        
+        for (int i = 0; i < boundaryNodes; ++i) {
+            PreprocessingAction action = 
+                new PreprocessingAction(
+                    boundaryNodesList.get(i), 
+                    weightFunction,
+                    i,
+                    regions);
+            
+            pool.submit(action);
+            actions.add(action);
+        }
+        
+        for (PreprocessingAction action : actions) {
+            action.join();
+        }
+    }
+    
+    private final class PreprocessingAction extends RecursiveAction {
+
+        private final DirectedGraphNode boundaryNode;
+        private final DirectedGraphWeightFunction weightFunction;
+        private final int region;
+        private final int regions;
+        
+        PreprocessingAction(DirectedGraphNode boundaryNode,
+                            DirectedGraphWeightFunction weightFunction,
+                            int region,
+                            int regions) {
+            
+            this.boundaryNode   = boundaryNode;
+            this.weightFunction = weightFunction;
+            this.region         = region;
+            this.regions        = regions;
+        }
+        
+        @Override
+        protected void compute() {
+            System.out.printf("Preprocessing region %d/%d.%n", region, regions);
+            
+            preprocess(boundaryNode, 
+                       weightFunction, 
+                       arcFlagsMap, 
+                       region);
         }
     }
 }

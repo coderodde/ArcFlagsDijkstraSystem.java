@@ -45,7 +45,8 @@ public final class Demo {
                 graphData.weightFunction(), 
                 graphData.coordinatesMap(), 
                 graphData.regionIdMap,
-                REGIONS);
+                REGIONS,
+                true); // Parallel on.
         
         t = System.nanoTime();
         List<DirectedGraphNode> path1 = dijkstraSystem.queryViaDijkstra(source,
