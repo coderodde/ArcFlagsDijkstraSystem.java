@@ -380,6 +380,7 @@ public final class ArcFlagsDijkstraSystem {
             
         buildArcFlagsMap(nodeList, regions);
         int iteration = 1;
+        long t = System.currentTimeMillis();
         
         for (DirectedGraphNode boundaryNode : boundaryNodesSet) {
             System.out.printf("Preprocessing: %d/%d.%n",
@@ -388,6 +389,9 @@ public final class ArcFlagsDijkstraSystem {
             
             preprocess(boundaryNode, regionIdMap.get(boundaryNode));
         }
+        
+        System.out.printf("[STATUS] Preprocessed sequentially in %d ms.%n", 
+                          System.currentTimeMillis() - t);
         
         for (int regionId = 0; 
                  regionId < regionIdMap.numberOfRegions(); 
@@ -582,6 +586,8 @@ public final class ArcFlagsDijkstraSystem {
         List<PreprocessingAction> actions = new ArrayList<>(boundaryNodes);
         ForkJoinPool pool = ForkJoinPool.commonPool();
         
+        long t = System.currentTimeMillis();
+        
         for (int i = 0; i < boundaryNodes; ++i) {
             DirectedGraphNode boundaryNode = boundaryNodesList.get(i);
             
@@ -599,6 +605,9 @@ public final class ArcFlagsDijkstraSystem {
         for (PreprocessingAction action : actions) {
             action.join();
         }
+        
+        System.out.printf("[STATUS] Preprocessed in parallel in %d ms.%n", 
+                          System.currentTimeMillis() - t);
     }
     
     private final class PreprocessingAction extends RecursiveAction {
