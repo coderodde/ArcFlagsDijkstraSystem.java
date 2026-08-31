@@ -135,12 +135,10 @@ public final class ArcFlagsDijkstraSystem {
         if (parallel) {
             parallelPreprocess(nodeList,
                                boundaryNodesSet,
-                               weightFunction,
                                regions);
         } else {
             preprocess(nodeList,
                        boundaryNodesSet, 
-                       weightFunction, 
                        regions);
         }
     }
@@ -378,10 +376,9 @@ public final class ArcFlagsDijkstraSystem {
      */
     private void preprocess(List<DirectedGraphNode> nodeList,
                             Set<DirectedGraphNode> boundaryNodesSet,
-                            DirectedGraphWeightFunction weightFunction,
                             int regions) {
             
-        buildArcFlagsMap(arcFlagsMap, nodeList, regions);
+        buildArcFlagsMap(nodeList, regions);
         int iteration = 1;
         
         for (DirectedGraphNode boundaryNode : boundaryNodesSet) {
@@ -389,10 +386,7 @@ public final class ArcFlagsDijkstraSystem {
                               iteration++, 
                               boundaryNodesSet.size());
             
-            preprocess(boundaryNode, 
-                       weightFunction,
-                       arcFlagsMap,
-                       regionIdMap.get(boundaryNode));
+            preprocess(boundaryNode, regionIdMap.get(boundaryNode));
         }
         
         for (int regionId = 0; 
@@ -422,10 +416,7 @@ public final class ArcFlagsDijkstraSystem {
      * @param arcFlagsMap    the target arc-flags map.
      * @param region         the current region number.
      */    
-    private static void preprocess(DirectedGraphNode boundaryNode,
-                                   DirectedGraphWeightFunction weightFunction,
-                                   ArcFlagsMap arcFlagsMap,
-                                   int region) {
+    private void preprocess(DirectedGraphNode boundaryNode, int region) {
         
         Map<DirectedGraphNode, Double> distancesMap = new HashMap<>();
         DoublePriorityBinaryHeap<DirectedGraphNode> frontierHeap =
@@ -509,9 +500,8 @@ public final class ArcFlagsDijkstraSystem {
      * @param nodeList    the list of all graph nodes.
      * @param regions     the total number of regions.
      */
-    private static void buildArcFlagsMap(ArcFlagsMap arcFlagsMap,
-                                         List<DirectedGraphNode> nodeList,
-                                         int regions) {
+    private void buildArcFlagsMap(List<DirectedGraphNode> nodeList,
+                                  int regions) {
         
         for (DirectedGraphNode node : nodeList) {
             for (DirectedGraphNode child : node.children()) {
@@ -578,8 +568,9 @@ public final class ArcFlagsDijkstraSystem {
     private void parallelPreprocess(
         List<DirectedGraphNode> nodeList, 
         Set<DirectedGraphNode> boundaryNodesSet, 
-        DirectedGraphWeightFunction weightFunction, 
         int regions) {
+        
+        buildArcFlagsMap(nodeList, regions);
     
         List<DirectedGraphNode> boundaryNodesList =
             new ArrayList<>(boundaryNodesSet);
@@ -592,11 +583,12 @@ public final class ArcFlagsDijkstraSystem {
         ForkJoinPool pool = ForkJoinPool.commonPool();
         
         for (int i = 0; i < boundaryNodes; ++i) {
+            DirectedGraphNode boundaryNode = boundaryNodesList.get(i);
+            
             PreprocessingAction action = 
                 new PreprocessingAction(
-                    boundaryNodesList.get(i), 
-                    weightFunction,
-                    i,
+                    boundaryNode,
+                    regionIdMap.get(boundaryNode),
                     regions);
             
             pool.submit(action);
@@ -611,29 +603,25 @@ public final class ArcFlagsDijkstraSystem {
     private final class PreprocessingAction extends RecursiveAction {
 
         private final DirectedGraphNode boundaryNode;
-        private final DirectedGraphWeightFunction weightFunction;
         private final int region;
         private final int regions;
         
         PreprocessingAction(DirectedGraphNode boundaryNode,
-                            DirectedGraphWeightFunction weightFunction,
                             int region,
                             int regions) {
             
             this.boundaryNode   = boundaryNode;
-            this.weightFunction = weightFunction;
             this.region         = region;
             this.regions        = regions;
         }
         
         @Override
         protected void compute() {
-            System.out.printf("Preprocessing region %d/%d.%n", region, regions);
+            System.out.printf("Preprocessing region %d/%d.%n", 
+                              region + 1, 
+                              regions);
             
-            preprocess(boundaryNode, 
-                       weightFunction, 
-                       arcFlagsMap, 
-                       region);
+            preprocess(boundaryNode, region);
         }
     }
 }

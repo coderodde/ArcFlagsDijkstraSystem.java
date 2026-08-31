@@ -20,7 +20,7 @@ public final class Demo {
     private static final int NODES = 50_000;
     private static final int ARCS = NODES * 3 + NODES / 2; // Road network.
     private static final int CROSSING_ARCS = 200;
-    private static final Random RANDOM = new Random();
+    private static final Random RANDOM = new Random(123);
     private static final double GRID_WIDTH_HEIGHT = 10.0;
     private static final double MAXIMUM_NEIGHBOUR_DISTANCE = 0.15;
     private static final double ADD_ARC_FACTOR = 0.2;
