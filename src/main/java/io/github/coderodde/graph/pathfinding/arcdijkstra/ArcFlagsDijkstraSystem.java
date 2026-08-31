@@ -622,6 +622,16 @@ public final class ArcFlagsDijkstraSystem {
                               regions);
             
             preprocess(boundaryNode, region);
+            
+            Set<DirectedGraphNode> reg = regionIdMap.getRegionNodes(region);
+            
+            for (DirectedGraphNode node : reg) {
+                for (DirectedGraphNode child : node.children()) {
+                    if (regionIdMap.get(node) == regionIdMap.get(child)) {
+                        arcFlagsMap.get(node, child).writeFlag(region);
+                    }
+                }
+            }
         }
     }
 }
