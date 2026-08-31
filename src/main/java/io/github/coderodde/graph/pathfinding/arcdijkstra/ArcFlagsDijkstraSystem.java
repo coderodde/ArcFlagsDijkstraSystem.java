@@ -589,7 +589,8 @@ public final class ArcFlagsDijkstraSystem {
                 new PreprocessingAction(
                     boundaryNode,
                     regionIdMap.get(boundaryNode),
-                    regions);
+                    regions,
+                    boundaryNodes);
             
             pool.submit(action);
             actions.add(action);
@@ -605,21 +606,24 @@ public final class ArcFlagsDijkstraSystem {
         private final DirectedGraphNode boundaryNode;
         private final int region;
         private final int regions;
+        private final int boundaryNodeCount;
         
         PreprocessingAction(DirectedGraphNode boundaryNode,
                             int region,
-                            int regions) {
+                            int regions,
+                            int boundaryNodeCount) {
             
-            this.boundaryNode   = boundaryNode;
-            this.region         = region;
-            this.regions        = regions;
+            this.boundaryNode      = boundaryNode;
+            this.region            = region;
+            this.regions           = regions;
+            this.boundaryNodeCount = boundaryNodeCount;
         }
         
         @Override
         protected void compute() {
             System.out.printf("Preprocessing region %d/%d.%n", 
                               region + 1, 
-                              regions);
+                              boundaryNodeCount);
             
             preprocess(boundaryNode, region);
             
