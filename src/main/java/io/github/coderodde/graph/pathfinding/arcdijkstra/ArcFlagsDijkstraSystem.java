@@ -134,7 +134,7 @@ public final class ArcFlagsDijkstraSystem {
         
         if (parallel) {
             parallelPreprocess(nodeList,
-                               boundaryNodesSet,
+                               boundaryNodesSet.size(),
                                regions);
         } else {
             preprocess(nodeList,
@@ -393,21 +393,7 @@ public final class ArcFlagsDijkstraSystem {
         System.out.printf("[STATUS] Preprocessed sequentially in %d ms.%n", 
                           System.currentTimeMillis() - t);
         
-        for (int regionId = 0; 
-                 regionId < regionIdMap.numberOfRegions(); 
-                 regionId++) {
-            
-            Set<DirectedGraphNode> region = 
-                regionIdMap.getRegionNodes(regionId);
-            
-            for (DirectedGraphNode node : region) {
-                for (DirectedGraphNode child : node.children()) {
-                    if (regionIdMap.get(node) == regionIdMap.get(child)) {
-                        arcFlagsMap.get(node, child).writeFlag(regionId);
-                    }
-                }
-            }
-        }
+        writeInternalArcFlags();
     }
         
     /**
@@ -416,8 +402,6 @@ public final class ArcFlagsDijkstraSystem {
      * 
      * @param boundaryNode   the boundary node from which to start the 
      *                       traversal backwards.
-     * @param weightFunction the graph weight function.
-     * @param arcFlagsMap    the target arc-flags map.
      * @param region         the current region number.
      */    
     private void preprocess(DirectedGraphNode boundaryNode, int region) {
@@ -571,35 +555,33 @@ public final class ArcFlagsDijkstraSystem {
 
     private void parallelPreprocess(
         List<DirectedGraphNode> nodeList, 
-        Set<DirectedGraphNode> boundaryNodesSet, 
+        int totalBoundaryNodes,
         int regions) {
         
         buildArcFlagsMap(nodeList, regions);
-    
-        List<DirectedGraphNode> boundaryNodesList =
-            new ArrayList<>(boundaryNodesSet);
-        
-        Collections.shuffle(boundaryNodesList);
-        
-        int boundaryNodes = boundaryNodesList.size();
-        
-        List<PreprocessingAction> actions = new ArrayList<>(boundaryNodes);
+
+        List<PreprocessingAction> actions = new ArrayList<>(regions);
         ForkJoinPool pool = ForkJoinPool.commonPool();
+        int boundaryNodeId = 1;
         
         long t = System.currentTimeMillis();
         
-        for (int i = 0; i < boundaryNodes; ++i) {
-            DirectedGraphNode boundaryNode = boundaryNodesList.get(i);
+        for (int region = 0; region < regions; ++region) {
+            Set<DirectedGraphNode> regionBoundaryNodeSet =
+                regionIdMap.getBoundaryNodes(region);
             
-            PreprocessingAction action = 
-                new PreprocessingAction(
-                    boundaryNode,
-                    regionIdMap.get(boundaryNode),
-                    regions,
-                    boundaryNodes);
-            
-            pool.submit(action);
-            actions.add(action);
+            for (DirectedGraphNode boundaryNode : regionBoundaryNodeSet) {
+                PreprocessingAction action = 
+                    new PreprocessingAction(
+                        boundaryNode, 
+                        boundaryNodeId, 
+                        totalBoundaryNodes, 
+                        region);
+
+                pool.submit(action);
+                actions.add(action);
+                ++boundaryNodeId;
+            }
         }
         
         for (PreprocessingAction action : actions) {
@@ -608,39 +590,45 @@ public final class ArcFlagsDijkstraSystem {
         
         System.out.printf("[STATUS] Preprocessed in parallel in %d ms.%n", 
                           System.currentTimeMillis() - t);
+
+        writeInternalArcFlags();
     }
     
     private final class PreprocessingAction extends RecursiveAction {
 
         private final DirectedGraphNode boundaryNode;
+        private final int boundaryNodeId;
+        private final int boundaryNodes;
         private final int region;
-        private final int regions;
-        private final int boundaryNodeCount;
         
         PreprocessingAction(DirectedGraphNode boundaryNode,
-                            int region,
-                            int regions,
-                            int boundaryNodeCount) {
+                            int boundaryNodeId,
+                            int boundaryNodes,
+                            int region) {
             
-            this.boundaryNode      = boundaryNode;
-            this.region            = region;
-            this.regions           = regions;
-            this.boundaryNodeCount = boundaryNodeCount;
+            this.boundaryNode   = boundaryNode;
+            this.boundaryNodeId = boundaryNodeId;
+            this.boundaryNodes  = boundaryNodes;
+            this.region         = region;
         }
         
         @Override
         protected void compute() {
-            System.out.printf("Preprocessing region %d/%d.%n", 
-                              region + 1, 
-                              boundaryNodeCount);
+            System.out.printf("Preprocessing boundary node %d/%d.%n", 
+                              boundaryNodeId,
+                              boundaryNodes);
             
             preprocess(boundaryNode, region);
-            
-            Set<DirectedGraphNode> reg = regionIdMap.getRegionNodes(region);
-            
-            for (DirectedGraphNode node : reg) {
+        }
+    }
+
+    private void writeInternalArcFlags() {
+        for (int region = 0;
+                 region < regionIdMap.numberOfRegions();
+                 ++region) {
+            for (DirectedGraphNode node : regionIdMap.getRegionNodes(region)) {
                 for (DirectedGraphNode child : node.children()) {
-                    if (regionIdMap.get(node) == regionIdMap.get(child)) {
+                    if (regionIdMap.get(child) == region) {
                         arcFlagsMap.get(node, child).writeFlag(region);
                     }
                 }

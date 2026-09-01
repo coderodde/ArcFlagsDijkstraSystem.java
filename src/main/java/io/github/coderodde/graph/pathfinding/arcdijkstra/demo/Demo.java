@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * This class implements the demonstration of the P2P-shortest path algorithns.
+ * This class implements the demonstration of the P2P-shortest path algorithms.
  */
 public final class Demo {
     
     public static final int REGIONS = 50;
-    private static final int NODES = 50_000;
-    private static final int ARCS = NODES * 3 + NODES / 2; // Road network.
-    private static final int CROSSING_ARCS = 200;
-    private static final Random RANDOM = new Random(123);
+    private static final int NODES = 100_000;
+    private static final int ARCS  = 350_000;
+    private static final int CROSSING_ARCS = 600;
+    private static final Random RANDOM = new Random();
     private static final double GRID_WIDTH_HEIGHT = 10.0;
     private static final double MAXIMUM_NEIGHBOUR_DISTANCE = 0.15;
     private static final double ADD_ARC_FACTOR = 0.2;
@@ -30,11 +30,11 @@ public final class Demo {
             "=== %s demo ===%n", 
             ArcFlagsDijkstraSystem.class.getSimpleName());
         
-        long t = System.nanoTime();
+        long t = System.currentTimeMillis();
         GraphData graphData = createRandomGraph();
-        long duration = System.nanoTime() - t;
+        long duration = System.currentTimeMillis()- t;
         
-        System.out.printf("Graph data built in %d ns.%n", duration);
+        System.out.printf("[STATUS] Graph data built in %d ms.%n", duration);
         
         DirectedGraphNode source = choose(graphData.nodeList());
         DirectedGraphNode target = choose(graphData.nodeList());
@@ -95,7 +95,7 @@ public final class Demo {
         DirectedGraphWeightFunction weightFunction = 
             new DirectedGraphWeightFunction();
         
-        long t = System.nanoTime();
+        long t = System.currentTimeMillis();
         
         for (int i = 0; i < NODES; ++i) {
             DirectedGraphNode node = new DirectedGraphNode(i);
@@ -104,22 +104,22 @@ public final class Demo {
             coordsMap.put(node, coords);
         }
         
-        System.out.printf("[STATUS] Created nodes and coordinates in %d ns.%n",
-                          System.nanoTime() - t);
+        System.out.printf("[STATUS] Created nodes and coordinates in %d ms.%n",
+                          System.currentTimeMillis() - t);
         
-        t = System.nanoTime();
+        t = System.currentTimeMillis();
         
         NodeRegionIDMap regionMap =
             new KdTreeNodeRegionIDMapBuilder()
                 .build(nodeList, coordsMap, REGIONS);
         
-        System.out.printf("[STATUS] Created region assignments in %d ns.%n", 
-                          System.nanoTime() - t);
+        System.out.printf("[STATUS] Created region assignments in %d ms.%n", 
+                          System.currentTimeMillis() - t);
         
         List<List<DirectedGraphNode>> regionLists = 
             new ArrayList<>(regionMap.numberOfRegions());
         
-        t = System.nanoTime();
+        t = System.currentTimeMillis();
         
         // Create internal regions:
         for (int region = 0; region < regionMap.numberOfRegions(); ++region) {
@@ -190,8 +190,8 @@ public final class Demo {
             --crossingArcs;
         }
         
-        System.out.printf("[STATUS] Created arcs in %d ns.%n", 
-                          System.nanoTime() - t);
+        System.out.printf("[STATUS] Created arcs in %d ms.%n", 
+                          System.currentTimeMillis() - t);
         
         return new GraphData(nodeList, 
                              weightFunction,
@@ -209,7 +209,7 @@ public final class Demo {
     }
 
     private static int getLocalRegionArcs(int regionSize, int graphSize) {
-        return (ARCS * regionSize) / graphSize;
+        return (int) (((long) ARCS * regionSize) / graphSize);
     }
     
     public static final record GraphData(

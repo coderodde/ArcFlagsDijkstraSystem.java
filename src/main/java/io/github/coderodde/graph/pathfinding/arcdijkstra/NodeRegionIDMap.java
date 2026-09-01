@@ -86,9 +86,35 @@ public final class NodeRegionIDMap {
             for (DirectedGraphNode parent : node.parents()) {
                 int parentRegion = map.get(parent);
                 
-                if (parentRegion != nodeRegion) {
+                if (nodeRegion != parentRegion) {
                     boundaryNodesSet.add(node);
-                    break;
+                    break; // Break the iteration over node's parents..
+                }
+            }
+        }
+        
+        return boundaryNodesSet;
+    }
+    
+    /**
+     * Returns the set of all boundary nodes over the {@code region}th region.
+     * 
+     * @param region the number of the region.
+     * 
+     * @return the set of all boundary nodes in the specified region.
+     */
+    public Set<DirectedGraphNode> getBoundaryNodes(int region) {
+        Set<DirectedGraphNode> boundaryNodesSet = inverseMap.get(region);
+        
+        for (DirectedGraphNode node : map.keySet()) {
+            int nodeRegion = map.get(node);
+            
+            for (DirectedGraphNode parent : node.parents()) {
+                int parentRegion = map.get(parent);
+                
+                if (nodeRegion != parentRegion) {
+                    boundaryNodesSet.add(node);
+                    break; // Break the iteration over node's parents..
                 }
             }
         }
