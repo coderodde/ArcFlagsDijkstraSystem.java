@@ -133,9 +133,7 @@ public final class ArcFlagsDijkstraSystem {
                 regionIdMap.getBoundaryNodes();
         
         if (parallel) {
-            parallelPreprocess(nodeList,
-                               boundaryNodesSet.size(),
-                               regions);
+            parallelPreprocess(nodeList, regions);
         } else {
             preprocess(nodeList,
                        boundaryNodesSet, 
@@ -553,16 +551,13 @@ public final class ArcFlagsDijkstraSystem {
         }
     }
 
-    private void parallelPreprocess(
-        List<DirectedGraphNode> nodeList, 
-        int totalBoundaryNodes,
-        int regions) {
+    private void parallelPreprocess(List<DirectedGraphNode> nodeList, 
+                                    int regions) {
         
         buildArcFlagsMap(nodeList, regions);
 
-        List<PreprocessingAction> actions = new ArrayList<>(regions);
+        List<PreprocessingAction> actions = new ArrayList<>();
         ForkJoinPool pool = ForkJoinPool.commonPool();
-        int boundaryNodeId = 1;
         
         long t = System.currentTimeMillis();
         
@@ -572,15 +567,10 @@ public final class ArcFlagsDijkstraSystem {
             
             for (DirectedGraphNode boundaryNode : regionBoundaryNodeSet) {
                 PreprocessingAction action = 
-                    new PreprocessingAction(
-                        boundaryNode, 
-                        boundaryNodeId, 
-                        totalBoundaryNodes, 
-                        region);
+                    new PreprocessingAction(boundaryNode, region);
 
                 pool.submit(action);
                 actions.add(action);
-                ++boundaryNodeId;
             }
         }
         
@@ -597,26 +587,19 @@ public final class ArcFlagsDijkstraSystem {
     private final class PreprocessingAction extends RecursiveAction {
 
         private final DirectedGraphNode boundaryNode;
-        private final int boundaryNodeId;
-        private final int boundaryNodes;
         private final int region;
         
-        PreprocessingAction(DirectedGraphNode boundaryNode,
-                            int boundaryNodeId,
-                            int boundaryNodes,
-                            int region) {
-            
-            this.boundaryNode   = boundaryNode;
-            this.boundaryNodeId = boundaryNodeId;
-            this.boundaryNodes  = boundaryNodes;
-            this.region         = region;
+        PreprocessingAction(DirectedGraphNode boundaryNode, int region) {
+            this.boundaryNode = boundaryNode;
+            this.region       = region;
         }
         
         @Override
         protected void compute() {
-            System.out.printf("Preprocessing boundary node %d/%d.%n", 
-                              boundaryNodeId,
-                              boundaryNodes);
+            System.out.printf(
+                "Preprocessing boundary node %s for region %d.%n", 
+                boundaryNode,
+                region);
             
             preprocess(boundaryNode, region);
         }
